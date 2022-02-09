@@ -1,6 +1,6 @@
 use crate::{parse_socket_addr, TcpOutletListenWorker, TcpRouter, TcpRouterHandle};
 use ockam_core::compat::boxed::Box;
-use ockam_core::{Address, AsyncTryClone, Result, Route};
+use ockam_core::{Address, AsyncTryClone, CapabilityAuthorization, Result, Route};
 use ockam_node::Context;
 
 /// High level management interface for TCP transports
@@ -64,6 +64,11 @@ impl TcpTransport {
         Ok(Self {
             router_handle: router,
         })
+    }
+
+    /// Return a reference to the [`CapabilityAuthorization`] instance for this transport's [`TcpRouterHandle`]
+    pub fn cap(&mut self) -> &mut CapabilityAuthorization {
+        self.router_handle.cap()
     }
 
     /// Manually establish an outgoing TCP connection on an existing transport.

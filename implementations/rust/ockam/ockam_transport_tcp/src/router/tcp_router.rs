@@ -5,7 +5,7 @@ use ockam_core::{Address, Decodable, LocalMessage, Result, Routed, Worker};
 use ockam_node::Context;
 use ockam_transport_core::TransportError;
 use std::collections::BTreeMap;
-use tracing::{debug, error, trace};
+use tracing::{error, info, trace};
 
 /// A TCP address router and connection listener
 ///
@@ -28,7 +28,7 @@ impl TcpRouter {
     pub async fn register(ctx: &Context) -> Result<TcpRouterHandle> {
         let main_addr = Address::random_local();
         let api_addr = Address::random_local();
-        debug!("Initialising new TcpRouter with address {}", &main_addr);
+        info!("Initialising new TcpRouter with address {}", &main_addr);
 
         let child_ctx = ctx.new_context(Address::random_local()).await?;
 
@@ -150,7 +150,7 @@ impl TcpRouter {
     /// Handle any [`RouterMessage::Route`] messages received by this
     /// nodes worker
     async fn handle_route(&mut self, ctx: &Context, mut msg: LocalMessage) -> Result<()> {
-        trace!(
+        info!(
             "TCP route request: {:?}",
             msg.transport().onward_route.next()
         );
@@ -226,9 +226,22 @@ impl Worker for TcpRouter {
 
         if msg_addr == self.main_addr {
             let msg = LocalMessage::decode(msg.payload())?;
+            info!(
+                "TcpRouter::handle_message: main_addr@{} Received: {:?}",
+                ctx.address(),
+                msg
+            );
+            let payload = &msg.transport().payload[1..];
+            info!("\tPayload: {:?}", String::from_utf8_lossy(payload));
             self.handle_route(ctx, msg).await?;
         } else if msg_addr == self.api_addr {
             let msg = TcpRouterRequest::decode(msg.payload())?;
+            info!(
+                "TcpRouter::handle_message: api_addr@{} Received: {:?}",
+                ctx.address(),
+                msg
+            );
+
             match msg {
                 TcpRouterRequest::Register { accepts, self_addr } => {
                     let res = self.handle_register(accepts, self_addr).await;

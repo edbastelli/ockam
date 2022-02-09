@@ -49,6 +49,7 @@ pub use ockam_macros::{AsyncTryClone, Message};
 extern crate futures_util;
 
 mod access_control;
+mod capability;
 pub mod compat;
 mod error;
 mod message;
@@ -59,6 +60,7 @@ pub mod vault;
 mod worker;
 
 pub use access_control::*;
+pub use capability::*;
 pub use error::*;
 pub use message::*;
 pub use processor::*;

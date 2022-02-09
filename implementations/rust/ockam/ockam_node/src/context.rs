@@ -16,8 +16,9 @@ use core::time::Duration;
 use ockam_core::compat::{boxed::Box, string::String, sync::Arc, vec::Vec};
 use ockam_core::{
     errcode::{Kind, Origin},
-    AccessControl, Address, AddressSet, AllowAll, AsyncTryClone, Error, LocalMessage, Message,
-    Processor, Result, Route, TransportMessage, TransportType, Worker,
+    AccessControl, Address, AddressSet, AsyncTryClone, CapabilityAuthorization, Error,
+    LocalMessage, Message, MessageFlowAuthorization, Processor, Result, Route, TransportMessage,
+    TransportType, Worker,
 };
 
 /// A default timeout in seconds
@@ -44,6 +45,7 @@ pub struct Context {
     rt: Arc<Runtime>,
     mailbox: Receiver<RelayMessage>,
     access_control: Box<dyn AccessControl>,
+    cap: CapabilityAuthorization,
 }
 
 #[ockam_core::async_trait]
@@ -54,10 +56,16 @@ impl AsyncTryClone for Context {
 }
 
 impl Context {
+    /// Return a reference to the [`CapabilityAuthorization`] instance for this context
+    pub fn cap(&mut self) -> &mut CapabilityAuthorization {
+        &mut self.cap
+    }
+
     /// Return runtime clone
     pub fn runtime(&self) -> Arc<Runtime> {
         self.rt.clone()
     }
+
     /// Wait for the next message from the mailbox
     pub(crate) async fn mailbox_next(&mut self) -> Result<Option<RelayMessage>> {
         loop {
@@ -100,6 +108,7 @@ impl Context {
                 address,
                 mailbox,
                 access_control: Box::new(access_control),
+                cap: CapabilityAuthorization::new(),
             },
             SenderPair {
                 msgs: mailbox_tx,
@@ -140,7 +149,7 @@ impl Context {
             Arc::clone(&self.rt),
             self.sender.clone(),
             addr.clone().into(),
-            AllowAll,
+            MessageFlowAuthorization::new(addr.clone()),
         );
 
         // Create a "bare relay" and register it with the router
@@ -192,8 +201,15 @@ impl Context {
         NM: Message + Send + 'static,
         NW: Worker<Context = Context, Message = NM>,
     {
-        self.start_worker_impl(address.into(), worker, AllowAll)
-            .await
+        let address_set: AddressSet = address.into();
+        let address_set_clone = address_set.clone();
+        info!("Context::start_worker -> {:?}", address_set_clone);
+        self.start_worker_impl(
+            address_set,
+            worker,
+            MessageFlowAuthorization::new(address_set_clone),
+        )
+        .await
     }
 
     /// Start a new worker instance with explicit access controls
@@ -271,8 +287,12 @@ impl Context {
     {
         let addr = address.clone();
 
-        let (ctx, senders, ctrl_rx) =
-            Context::new(self.rt.clone(), self.sender.clone(), addr.into(), AllowAll);
+        let (ctx, senders, ctrl_rx) = Context::new(
+            self.rt.clone(),
+            self.sender.clone(),
+            addr.into(),
+            MessageFlowAuthorization::new(address.clone()),
+        );
 
         // Initialise the processor relay with the ctrl receiver
         ProcessorRelay::<P>::init(self.rt.as_ref(), processor, ctx, ctrl_rx);
@@ -511,6 +531,7 @@ impl Context {
 
         // Send the packed user message with associated route
         sender.send(msg).await.map_err(NodeError::from_send_err)?;
+
         Ok(())
     }
 
@@ -730,8 +751,9 @@ impl Context {
     }
 
     /// Set access control for current context
-    pub async fn set_access_control(&mut self) -> Result<()> {
-        unimplemented!()
+    pub async fn set_access_control(&mut self, access_control: impl AccessControl) -> Result<()> {
+        self.access_control = Box::new(access_control);
+        Ok(())
     }
 
     /// This function is called by Relay to indicate a worker is initialised

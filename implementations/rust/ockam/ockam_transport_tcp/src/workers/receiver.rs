@@ -89,6 +89,13 @@ impl Processor for TcpRecvProcessor {
         // Deserialize the message now
         let mut msg = TransportMessage::decode(&buf).map_err(|_| TransportError::RecvBadMessage)?;
 
+        info!(
+            "TcpRecvProcessor::process: {} Received: {:?}",
+            ctx.address(),
+            msg
+        );
+        info!("\tPayload: {:?}", String::from_utf8_lossy(&msg.payload));
+
         // Heartbeat message
         if msg.onward_route.next().is_err() {
             trace!("Got heartbeat message from: {}", self.peer_addr);

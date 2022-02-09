@@ -1,4 +1,4 @@
-use crate::compat::boxed::Box;
+use crate::compat::{boxed::Box, string::String};
 use crate::{LocalMessage, Result};
 
 /// Defines the interface for message flow authorization.
@@ -35,7 +35,14 @@ pub struct AllowAll;
 
 #[async_trait]
 impl AccessControl for AllowAll {
-    async fn is_authorized(&self, _local_msg: &LocalMessage) -> Result<bool> {
+    async fn is_authorized(&self, local_msg: &LocalMessage) -> Result<bool> {
+        warn!("AllowAll::is_authorized -> {}", local_msg.transport());
+        if !local_msg.transport().payload.is_empty() {
+            warn!(
+                "\tPayload: {:?}",
+                String::from_utf8_lossy(&local_msg.transport().payload[1..])
+            );
+        }
         crate::allow()
     }
 }
@@ -45,7 +52,14 @@ pub struct DenyAll;
 
 #[async_trait]
 impl AccessControl for DenyAll {
-    async fn is_authorized(&self, _local_msg: &LocalMessage) -> Result<bool> {
+    async fn is_authorized(&self, local_msg: &LocalMessage) -> Result<bool> {
+        warn!("DenyAll::is_authorized -> {}", local_msg.transport());
+        if !local_msg.transport().payload.is_empty() {
+            warn!(
+                "\tPayload: {:?}",
+                String::from_utf8_lossy(&local_msg.transport().payload[1..])
+            );
+        }
         crate::deny()
     }
 }

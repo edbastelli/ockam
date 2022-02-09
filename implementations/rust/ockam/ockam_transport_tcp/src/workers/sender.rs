@@ -9,7 +9,7 @@ use std::net::SocketAddr;
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
-use tracing::{debug, trace, warn};
+use tracing::{debug, info, warn};
 
 /// Provides the transmit and receive parts of a TCP connection
 #[derive(Debug)]
@@ -99,7 +99,7 @@ impl TcpSendWorker {
         peer: SocketAddr,
         hostnames: Vec<String>,
     ) -> Result<WorkerPair> {
-        trace!("Creating new TCP worker pair");
+        info!("Creating new TCP worker pair");
 
         let tx_addr = Address::random_local();
         let internal_addr = Address::random_local();
@@ -111,8 +111,13 @@ impl TcpSendWorker {
             DelayedEvent::create(ctx, internal_addr.clone(), TcpSendWorkerMsg::Heartbeat).await?,
         );
 
-        ctx.start_worker(vec![tx_addr.clone(), internal_addr], sender)
-            .await?;
+        let addr: ockam_core::AddressSet = vec![tx_addr.clone(), internal_addr].into();
+        info!(
+            "Initialising new TcpSendWorker with address set {:?}",
+            &addr
+        );
+
+        ctx.start_worker(addr, sender).await?;
 
         // Return a handle to the worker pair
         Ok(WorkerPair {
@@ -196,6 +201,14 @@ impl Worker for TcpSendWorker {
         msg: Routed<Self::Message>,
     ) -> Result<()> {
         self.heartbeat.cancel();
+
+        info!(
+            "TcpSendWorker::handle_message: {} Received: {:?}",
+            ctx.address(),
+            msg
+        );
+        let payload = &msg.payload();
+        info!("\tPayload: {:?}", String::from_utf8_lossy(payload));
 
         let tx = match &mut self.tx {
             Some(tx) => tx,

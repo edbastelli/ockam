@@ -4,7 +4,7 @@ use crate::{
 };
 use ockam_core::compat::net::{SocketAddr, ToSocketAddrs};
 use ockam_core::{async_trait, compat::boxed::Box};
-use ockam_core::{Address, AsyncTryClone, Result, Route};
+use ockam_core::{Address, AsyncTryClone, CapabilityAuthorization, Result, Route};
 use ockam_node::Context;
 use ockam_transport_core::TransportError;
 
@@ -14,6 +14,7 @@ use ockam_transport_core::TransportError;
 pub(crate) struct TcpRouterHandle {
     ctx: Context,
     api_addr: Address,
+    cap: CapabilityAuthorization,
 }
 
 #[async_trait]
@@ -27,12 +28,21 @@ impl AsyncTryClone for TcpRouterHandle {
 impl TcpRouterHandle {
     /// Create a new `TcpRouterHandle` with the given address
     pub(crate) fn new(ctx: Context, api_addr: Address) -> Self {
-        TcpRouterHandle { ctx, api_addr }
+        TcpRouterHandle {
+            ctx,
+            api_addr,
+            cap: CapabilityAuthorization::new(),
+        }
     }
 
     /// Return a reference to the router handle's [`Context`]
     pub fn ctx(&self) -> &Context {
         &self.ctx
+    }
+
+    /// Return a reference to the router handle's [`CapabilityAuthorization`] instance
+    pub fn cap(&mut self) -> &mut CapabilityAuthorization {
+        &mut self.cap
     }
 }
 

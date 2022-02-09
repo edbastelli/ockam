@@ -13,6 +13,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AddressSet(Vec<Address>);
 
+impl Display for AddressSet {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(&format!("{:?}", self.0))
+    }
+}
+
 impl AddressSet {
     /// Retrieve the set's iterator.
     pub fn iter(&self) -> impl Iterator<Item = &Address> {
@@ -208,20 +214,32 @@ impl Address {
     /// let local_worker: Address = Address::random(LOCAL);
     /// ```
     pub fn random(tt: TransportType) -> Self {
-        Self { tt, ..random() }
+        Self { tt, ..not_random() }
     }
 
     /// Generate a random address with transport type [`LOCAL`].
     pub fn random_local() -> Self {
+        let _todo: Address = random();
         Self {
             tt: LOCAL,
-            ..random()
+            ..not_random()
         }
     }
 
     /// Get transport type of this address.
     pub fn transport_type(&self) -> TransportType {
         self.tt
+    }
+}
+
+/// TODO
+
+pub fn not_random() -> Address {
+    static mut COUNTER: u32 = 0;
+    #[allow(unsafe_code)]
+    unsafe {
+        COUNTER += 1;
+        format!("{}", COUNTER).into()
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::{Context, Executor};
-use ockam_core::{Address, AllowAll};
+use ockam_core::{Address, MessageFlowAuthorization};
 
 /// A minimal worker implementation that does nothing
 pub struct NullWorker;
@@ -20,7 +20,12 @@ pub fn start_node() -> (Context, Executor) {
 
     // The root application worker needs a mailbox and relay to accept
     // messages from workers, and to buffer incoming transcoded data.
-    let (ctx, sender, _) = Context::new(exe.runtime(), exe.sender(), addr.into(), AllowAll);
+    let (ctx, sender, _) = Context::new(
+        exe.runtime(),
+        exe.sender(),
+        addr.clone().into(),
+        MessageFlowAuthorization::new(addr),
+    );
 
     // Register this mailbox handle with the executor
     exe.initialize_system("app", sender);
