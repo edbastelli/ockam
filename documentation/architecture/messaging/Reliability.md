@@ -90,12 +90,19 @@ application workers**.
 
 ## Improving reliability
 
-**Retries** can be used to improve delivery reliability. Given a chance to deliver message from `A` to `B`: `R(A->B) = 0.5`. If we retry
-delivery on missing message, it becomes `R1 = R + (1- R) * R = 0.75` on first retry, `R2 = 0.875` on second, etc. If retries `-> ∞`,
-then `R∞->1`.
+**Retries** can be used to improve delivery reliability.
 
-Retries **decrease the uniqueness rate**. Given `DM(A->B) = {0.5, 1}`, if we enable retries for this delivery
-then `DMr∞(A->B) = {->1, ->0.5}`, where reliability increased at the expense of reducing the uniqueness rate.
+- Given a chance to deliver message from `A` to `B`: `R(A->B) = 0.5`.
+- If we retry delivery on missing message,
+- Then it becomes `R1 = R + (1- R) * R = 0.75` on first retry, `R2 = 0.875` on second, etc.
+- If retries `-> ∞`,
+- Then `R∞->1`.
+
+Retries **decrease the uniqueness rate**.
+
+- Given `DM(A->B) = {0.5, 1}`.
+- If we enable retries for this delivery,
+- Then `DMr∞(A->B) = {->1, ->0.5}`, where reliability increased at the expense of reducing the uniqueness rate.
 
 To control retries, confirmation messages and timeouts are used:
 
@@ -137,8 +144,9 @@ exactly-once, its internal delivery mode will be also exactly-once.
 
 Otherwise, we should consider reliability of delivery from worker receiving a message to it sending this message.
 
-If we have a pipeline of routes `A->X; X->B`, in which `R(A->X) -> 1` and `R(X->B) -> 1`
-then `R(A->B) = R(A->X)xR(X)xR(X->B)`. If X has errors, then `R(X) < 1`.
+- If we have a pipeline of routes `A->X; X->B`, in which `R(A->X) -> 1`
+- and `R(X->B) -> 1`,
+- Then `R(A->B) = R(A->X)xR(X)xR(X->B)`. If X has errors, then `R(X) < 1`.
 
 <img src="./images/reliability_errors.jpg" width="100%">
 

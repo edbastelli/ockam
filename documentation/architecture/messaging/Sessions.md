@@ -72,8 +72,10 @@ Spawner worker may serve as a discovery worker if reply route leads back to the 
 
 <img src="./images/spawner_discovery.jpg" width="50%">
 
-If "create" message route is backtraced, reply route can be a backtrace to the original message. In this case the worker which sent "create"
-message will receive "create_ok" message. This type of spawning can be used to spawn Responders using session handshake.
+If "create" message route is backtraced, reply route can be a backtrace to the original message.
+
+In this case the worker which sent "create" message will receive "create_ok" message. This type of spawning can be used to spawn Responders
+using session handshake.
 
 Session init route leads to the spawner.
 

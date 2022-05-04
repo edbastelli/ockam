@@ -163,7 +163,9 @@ This makes worker `A` and `B` mutually accessible via routes `A->F ; F'->B` and 
 
 <img src="./images/proxy.jpg" width="100%">
 
-Such forwarding worker is called **proxy worker**. Delivery through a proxy worker is backtraceable. By induction, delivery through multiple
+Such forwarding worker is called **proxy worker**.
+
+Delivery through a proxy worker is backtraceable. By induction, delivery through multiple
 proxy workers is also backtraceable. A distributed proxy worker (two workers working together as proxy) is called
 a [Channel](./Pipes_Channels.md#channel):
 
